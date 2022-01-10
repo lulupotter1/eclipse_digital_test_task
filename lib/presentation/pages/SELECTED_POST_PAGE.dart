@@ -66,7 +66,7 @@ List<Widget> listOfComments(
       ],
     )));
   }
-  list.add(ExpandedButton(
+  list.add(CustomButton(
     text: 'Добавить комментарий',
     onPressed: () async {
       await showPageDialog(context, titleText: '', body: SendCommentPage());

@@ -39,7 +39,7 @@ class SendCommentPage extends StatelessWidget {
             const SizedBox(
               height: 30,
             ),
-            ExpandedButton(
+            CustomButton(
               text: 'Отправить',
               onPressed: () async {
                 if (formAuthKey13.currentState!.validate()) {
