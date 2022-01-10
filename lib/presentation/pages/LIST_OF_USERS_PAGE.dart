@@ -1,7 +1,8 @@
+import 'dart:convert';
+
 import 'package:eclipse_digital_test_task/data/model/model_exporter.dart';
-import 'package:eclipse_digital_test_task/presentation/widgets/hive_widgets/boxes.dart';
+import 'package:eclipse_digital_test_task/data/storage/flutter_security_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:eclipse_digital_test_task/data/model/get_user_information/user_information_model_res.dart';
 import 'package:eclipse_digital_test_task/data/utils/constants.dart';
 import 'package:eclipse_digital_test_task/presentation/widgets/custom_rows/custom_row.dart';
 import 'package:eclipse_digital_test_task/presentation/widgets/frames/rounded_container.dart';
@@ -40,49 +41,36 @@ List<Widget> _usersInformation(AppState state, BuildContext context) {
   for (int index = 0; index < usersList.length; index++) {
     list.add(GestureDetector(
       onTap: () async {
-        final postsBox = Boxes.getPostsInformationRes();
-        final albumsBox = Boxes.getAlbumsInformationRes();
-
         if (state.userIndex != usersList[index].id) {
-          var post = postsBox.get('usernumber${state.userIndex} index');
-          var album = albumsBox.get('usernumber${state.userIndex} index');
-          if (post == null && album == null) {
-            appStore.dispatch(
-                UpdateAppStateAction(getAlbumsInformationResList: []));
-            appStore
-                .dispatch(UpdateAppStateAction(getPostsInformationResList: []));
+          appStore
+              .dispatch(UpdateAppStateAction(getAlbumsInformationResList: []));
+          appStore
+              .dispatch(UpdateAppStateAction(getPostsInformationResList: []));
 
-            appStore
-                .dispatch(UpdateAppStateAction(userIndex: usersList[index].id));
-            await appStore.dispatch(GetPostsAndAlbumsByUserIdACtion(
-                userId: usersList[index].id!,
-                routes: AppRoutes.selectedUserPage,
-                context: context));
-          } else {
-            List<GetPostsInformationRes> list = [];
-            List<GetAlbumsInformationRes> list2 = [];
-            for (int index = 0;
-                index < postsBox.keys.toList().length;
-                index++) {
-              if (postsBox.containsKey(index)) {
-                list.add(postsBox.get(index)!);
-              }
-            }
-
-            for (int index = 0;
-                index < albumsBox.keys.toList().length;
-                index++) {
-              if (albumsBox.containsKey(index)) {
-                list2.add(albumsBox.get(index)!);
-              }
-            }
-
-            appStore.dispatch(UpdateAppStateAction(
-                getAlbumsInformationResList: list2,
-                getPostsInformationResList: list));
-            Navigator.pushNamed(context, AppRoutes.selectedUserPage);
-          }
+          appStore
+              .dispatch(UpdateAppStateAction(userIndex: usersList[index].id));
+          await appStore.dispatch(GetPostsAndAlbumsByUserIdACtion(
+              userId: usersList[index].id!,
+              routes: AppRoutes.selectedUserPage,
+              context: context));
         } else {
+          final UserSecurityStorage getUserInformationRes =
+              UserSecurityStorage();
+          var posts = await getUserInformationRes.readSecureData('posts');
+          var albums = await getUserInformationRes.readSecureData('albums');
+          List<GetPostsInformationRes> list = [];
+          List<GetAlbumsInformationRes> list2 = [];
+          var res = json.decode(posts);
+          var res2 = json.decode(albums);
+          for (int index = 0; index < res.length; index++) {
+            list.add(GetPostsInformationRes.fromJson(res[index]));
+          }
+          for (int index = 0; index < res2.length; index++) {
+            list2.add(GetAlbumsInformationRes.fromJson(res2[index]));
+          }
+          appStore.dispatch(UpdateAppStateAction(
+              getPostsInformationResList: list,
+              getAlbumsInformationResList: list2));
           Navigator.pushNamed(context, AppRoutes.selectedUserPage);
         }
       },

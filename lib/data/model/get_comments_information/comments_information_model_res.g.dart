@@ -3,40 +3,6 @@
 part of 'comments_information_model_res.dart';
 
 // **************************************************************************
-// TypeAdapterGenerator
-// **************************************************************************
-
-class GetCommentsInformationResAdapter
-    extends TypeAdapter<GetCommentsInformationRes> {
-  @override
-  final int typeId = 3;
-
-  @override
-  GetCommentsInformationRes read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    return GetCommentsInformationRes();
-  }
-
-  @override
-  void write(BinaryWriter writer, GetCommentsInformationRes obj) {
-    writer..writeByte(0);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GetCommentsInformationResAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-// **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 

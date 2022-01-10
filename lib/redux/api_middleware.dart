@@ -1,12 +1,12 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
-import 'package:eclipse_digital_test_task/presentation/widgets/hive_widgets/boxes.dart';
+import 'package:eclipse_digital_test_task/data/storage/flutter_security_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:eclipse_digital_test_task/data/model/create_comment/create_comment_model_res.dart';
 import 'package:eclipse_digital_test_task/data/model/model_exporter.dart';
 import 'package:eclipse_digital_test_task/data/utils/constants.dart';
 import 'package:eclipse_digital_test_task/redux/state.dart';
-import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:redux/redux.dart';
 
 import 'action.dart';
@@ -35,28 +35,17 @@ class ApiMiddleware extends MiddlewareClass<AppState> {
 _getUsersAction(
     AppState state, GetUsersAction action, NextDispatcher next) async {
   try {
-    final usersBox = Boxes.getUserInformationRes();
-
+    final UserSecurityStorage userSecureStorage = UserSecurityStorage();
     List<GetUserInformationRes> object = [];
-    final res = await _getClient().get(ApiQueries.queryGetUsers);
-    if (res.data.length > 0) {
-      for (int index = 0; index < res.data.length; index++) {
-        object.add(GetUserInformationRes.fromJson(res.data[index]));
-        GetUserInformationRes getUserInformationRes = GetUserInformationRes(
-            id: object[index].id,
-            name: object[index].name,
-            email: object[index].email,
-            username: object[index].username,
-            phone: object[index].phone,
-            website: object[index].website,
-            company: object[index].company);
+    final res = await _getClient().get(ApiQueries.queryGetUsers,
+        options: Options(responseType: ResponseType.plain));
+    var decoded = json.decode(res.data.toString());
 
-        usersBox.put(index, getUserInformationRes);
-
-        getUserInformationRes.save();
+    if (decoded.length > 0) {
+      userSecureStorage.writeSecureData('users', res.data.toString());
+      for (int index = 0; index < decoded.length; index++) {
+        object.add(GetUserInformationRes.fromJson(decoded[index]));
       }
-
-      var a = usersBox.get(1);
       next(UpdateAppStateAction(getUserInformationResList: object));
     } else {
       _alert("Проблема с апи", "Попробуйте еще раз", action.context);
@@ -69,25 +58,22 @@ _getUsersAction(
 _getCommentsByPostIdAction(AppState state, GetCommentsByPostIdAction action,
     NextDispatcher next) async {
   try {
-    List<GetCommentsInformationRes> object = [];
     Navigator.pushNamed(action.context, action.routes);
-    final commentsBox = Boxes.getCommentsInformationRes();
+
+    final UserSecurityStorage userSecureStorage = UserSecurityStorage();
+
+    List<GetCommentsInformationRes> object = [];
     final res = await _getClient().get(ApiQueries.queryGetComments,
-        queryParameters: {"userId": action.postId});
-    if (res.data.length > 0) {
-      for (int index = 0; index < res.data.length; index++) {
-        object.add(GetCommentsInformationRes.fromJson(res.data[index]));
+        queryParameters: {"postId": action.postId},
+        options: Options(responseType: ResponseType.plain));
+    var decoded = json.decode(res.data.toString());
 
-        commentsBox.put('postnumber${state.userIndex} index',
-            GetCommentsInformationRes.fromJson(res.data[index]));
+    if (decoded.length > 0) {
+      userSecureStorage.writeSecureData('comments', res.data.toString());
+      for (int index = 0; index < decoded.length; index++) {
+        object.add(GetCommentsInformationRes.fromJson(decoded[index]));
       }
-
       next(UpdateAppStateAction(getCommentsInformationResList: object));
-
-      // final commentsInfo =
-      //     HiveModelCustom(getCommentsInformationResList: object);
-
-      // commentsBox.put('GetCommentsInformationRes', commentsInfo);
     } else {
       _alert("Проблема с апи", "Попробуйте еще раз", action.context);
     }
@@ -99,36 +85,28 @@ _getCommentsByPostIdAction(AppState state, GetCommentsByPostIdAction action,
 _createCommentAction(
     AppState state, CreateCommentAction action, NextDispatcher next) async {
   try {
-    final commentsBox = Boxes.getCommentsInformationRes();
+    final UserSecurityStorage userSecureStorage = UserSecurityStorage();
 
-    final res = await _getClient().post(ApiQueries.queryGetComments,
-        data: action.createCommentReq.toJson());
+    // comments.add();
+    final res = await _getClient().post(
+      ApiQueries.queryGetComments,
+      data: action.createCommentReq.toJson(),
+    );
     var object = CreateCommentRes.fromJson(res.data);
-
+    var lastComment = GetCommentsInformationRes(
+      postId: state.postIndex,
+      id: object.id,
+      name: object.name,
+      email: object.email,
+      body: object.body,
+    );
     final List<GetCommentsInformationRes> newCommentsList =
         state.getCommentsInformationResList;
-    newCommentsList.add(GetCommentsInformationRes(
-      postId: state.postIndex,
-      id: object.id,
-      name: object.name,
-      email: object.email,
-      body: object.body,
-    ));
-
-    commentsBox.add(GetCommentsInformationRes(
-      postId: state.postIndex,
-      id: object.id,
-      name: object.name,
-      email: object.email,
-      body: object.body,
-    ));
-
+    newCommentsList.add(lastComment);
+    var comments = json.encode(newCommentsList);
+    userSecureStorage.writeSecureData("comments", comments);
     next(UpdateAppStateAction(getCommentsInformationResList: newCommentsList));
-
-    // final commentsInfo = HiveModelCustom(
-    //     getCommentsInformationResList: state.getCommentsInformationResList);
-
-    // commentsBox.put('GetCommentsInformationRes', commentsInfo);
+    Navigator.pop(action.context);
   } on DioError catch (e) {
     _alert("Проблема с апи", e.error.toString(), action.context);
   }
@@ -137,25 +115,24 @@ _createCommentAction(
 _getPhotosByAlbumIdAction(AppState state, GetPhotosByAlbumIdAction action,
     NextDispatcher next) async {
   try {
-    List<GetPhotosInformationRes> object = [];
     Navigator.pushNamed(action.context, action.routes);
-    final photosBox = Boxes.getPhotosInformationRes();
+
+    List<GetPhotosInformationRes> object = [];
+    final UserSecurityStorage userSecureStorage = UserSecurityStorage();
 
     final res = await _getClient().get(ApiQueries.queryGetPhotos,
+        options: Options(responseType: ResponseType.plain),
         queryParameters: {'albumId': action.albumId});
-    if (res.data.length > 0) {
-      for (int index = 0; index < res.data.length; index++) {
-        object.add(GetPhotosInformationRes.fromJson(res.data[index]));
+    var decoded = json.decode(res.data.toString());
 
-        photosBox.put('albumnumber${state.userIndex} index',
-            GetPhotosInformationRes.fromJson(res.data[index]));
+    if (decoded.length > 0) {
+      userSecureStorage.writeSecureData('photos', res.data.toString());
+      for (int index = 0; index < decoded.length; index++) {
+        object.add(GetPhotosInformationRes.fromJson(decoded[index]));
       }
       next(UpdateAppStateAction(
         getPhotoInformationResList: object,
       ));
-
-      // final photosInfo = HiveModelCustom(getPhotosInformationResList: object);
-      // photosBox.put('GetPhotosInformationRes', photosInfo);
     } else {
       _alert("Проблема с апи", "Попробуйте еще раз", action.context);
     }
@@ -170,38 +147,33 @@ _getPostsAndAlbumsByUserIdACtion(AppState state,
   List<GetAlbumsInformationRes> object = [];
   try {
     Navigator.pushNamed(action.context, action.routes);
-    final postsBox = Boxes.getPostsInformationRes();
-    final albumsBox = Boxes.getAlbumsInformationRes();
+    final UserSecurityStorage userSecureStorage = UserSecurityStorage();
 
     final res = await _getClient().get(ApiQueries.queryGetAlbums,
+        options: Options(responseType: ResponseType.plain),
         queryParameters: {"userId": action.userId});
 
     final res2 = await _getClient().get(ApiQueries.queryGetPosts,
+        options: Options(responseType: ResponseType.plain),
         queryParameters: {"userId": action.userId});
+    var decoded = json.decode(res.data.toString());
+    var decoded2 = json.decode(res2.data.toString());
 
-    if (res.data.length > 0 && res2.data.length > 0) {
-      for (int index = 0; index < res.data.length; index++) {
-        object.add(GetAlbumsInformationRes.fromJson(res.data[index]));
-        object2.add(GetPostsInformationRes.fromJson(res2.data[index]));
-        postsBox.put(
-          'usernumber${state.userIndex} index',
-          GetPostsInformationRes.fromJson(res2.data[index]),
-        );
+    if (decoded.length > 0 && decoded2.length > 0) {
+      userSecureStorage.writeSecureData('albums', res.data.toString());
+      userSecureStorage.writeSecureData('posts', res2.data.toString());
 
-        albumsBox.put('usernumber${state.userIndex} index',
-            GetAlbumsInformationRes.fromJson(res.data[index]));
+      for (int index = 0; index < decoded.length; index++) {
+        object.add(GetAlbumsInformationRes.fromJson(decoded[index]));
+      }
+
+      for (int index = 0; index < decoded2.length; index++) {
+        object2.add(GetPostsInformationRes.fromJson(decoded2[index]));
       }
 
       next(UpdateAppStateAction(
           getAlbumsInformationResList: object,
           getPostsInformationResList: object2));
-
-      // final albumsInfo = HiveModelCustom(getAlbumsInformationResList: object);
-      // final postsInfo = HiveModelCustom(getPostsInformationResList: object2);
-      // albumsBox.put('GetAlbumsInformationRes', albumsInfo);
-      // albumsBox.put('GetPostsInformationRes', postsInfo);
-
-      Navigator.pushNamed(action.context, action.routes);
     } else {
       _alert("Проблема с апи", "Попробуйте еще раз", action.context);
     }

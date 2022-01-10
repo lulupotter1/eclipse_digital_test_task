@@ -1,11 +1,9 @@
-import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'albums_information_model_res.g.dart';
 
 @JsonSerializable()
-@HiveType(typeId: 2)
-class GetAlbumsInformationRes extends HiveObject {
+class GetAlbumsInformationRes {
   int? userId;
   int? id;
   String? title;

@@ -16,7 +16,7 @@ class BasicInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-        style: ThemeTextStyle.R18white,
+        style: ThemeTextStyle.R18black,
         validator: validator,
         controller: controller,
         decoration: InputDecoration(

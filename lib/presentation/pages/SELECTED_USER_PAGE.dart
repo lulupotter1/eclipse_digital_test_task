@@ -1,4 +1,6 @@
-import 'package:eclipse_digital_test_task/presentation/widgets/hive_widgets/boxes.dart';
+import 'dart:convert';
+
+import 'package:eclipse_digital_test_task/data/storage/flutter_security_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:eclipse_digital_test_task/data/model/model_exporter.dart';
 import 'package:eclipse_digital_test_task/data/utils/constants.dart';
@@ -19,7 +21,7 @@ class SelectedUserPage extends StatelessWidget {
         converter: (store) => store.state,
         builder: (context, state) {
           GetUserInformationRes userInfo =
-              state.getUserInformationResList[state.userIndex];
+              state.getUserInformationResList[state.userIndex - 1];
 
           return ScaffoldWidget(
             body: state.getPostsInformationResList.isNotEmpty &&
@@ -106,30 +108,25 @@ class SelectedUserPage extends StatelessWidget {
           for (int index = 0; index < 3; index++)
             InkWell(
               onTap: () async {
-                final photosBox = Boxes.getPhotosInformationRes();
-
                 if (listOfAlbumInfo[index].id != state.albumIndex) {
-                  if (photosBox.get('albumnumber${state.userIndex} index') ==
-                      null) {
-                    await appStore.dispatch(GetPhotosByAlbumIdAction(
-                        albumId: listOfAlbumInfo[index].id!,
-                        routes: AppRoutes.selectedAlbumPage,
-                        context: context));
-                    appStore.dispatch(UpdateAppStateAction(
-                        albumIndex: listOfAlbumInfo[index].id));
-                  } else {
-                    List<GetPhotosInformationRes> list = [];
-                    for (int index = 0;
-                        index < photosBox.keys.toList().length;
-                        index++) {
-                      if (photosBox.containsKey(index)) {
-                        list.add(photosBox.get(index)!);
-                      }
-                    }
-                    appStore.dispatch(
-                        UpdateAppStateAction(getPhotoInformationResList: list));
-                  }
+                  await appStore.dispatch(GetPhotosByAlbumIdAction(
+                      albumId: listOfAlbumInfo[index].id!,
+                      routes: AppRoutes.selectedAlbumPage,
+                      context: context));
+                  appStore.dispatch(UpdateAppStateAction(
+                      albumIndex: listOfAlbumInfo[index].id));
                 } else {
+                  final UserSecurityStorage getUserInformationRes =
+                      UserSecurityStorage();
+                  var photos =
+                      await getUserInformationRes.readSecureData('photos');
+                  List<GetPhotosInformationRes> list = [];
+                  var res = json.decode(photos);
+                  for (int index = 0; index < res.length; index++) {
+                    list.add(GetPhotosInformationRes.fromJson(res[index]));
+                  }
+                  appStore.dispatch(
+                      UpdateAppStateAction(getPhotoInformationResList: list));
                   Navigator.pushNamed(context, AppRoutes.selectedAlbumPage);
                 }
               },
@@ -186,34 +183,29 @@ Widget _customListPostPreviewContainer(AppState state, BuildContext context) {
                 margin: EdgeInsets.zero,
                 child: InkWell(
                   onTap: () async {
-                    final commentsBox = Boxes.getCommentsInformationRes();
-
                     if (state.postIndex != listOfPostsInfo[index].id) {
-                      if (commentsBox
-                              .get('postnumber${state.userIndex} index') ==
-                          null) {
-                        appStore.dispatch(UpdateAppStateAction(
-                            getCommentsInformationResList: []));
-                        appStore.dispatch(UpdateAppStateAction(
-                            postIndex: listOfPostsInfo[index].id));
+                      appStore.dispatch(UpdateAppStateAction(
+                          getCommentsInformationResList: []));
+                      appStore.dispatch(UpdateAppStateAction(
+                          postIndex: listOfPostsInfo[index].id));
 
-                        await appStore.dispatch(GetCommentsByPostIdAction(
-                            postId: listOfPostsInfo[index].id!,
-                            routes: AppRoutes.selectedPostPage,
-                            context: context));
-                      } else {
-                        List<GetCommentsInformationRes> list = [];
-                        for (int index = 0;
-                            index < commentsBox.keys.toList().length;
-                            index++) {
-                          if (commentsBox.containsKey(index)) {
-                            list.add(commentsBox.get(index)!);
-                          }
-                        }
-                        appStore.dispatch(UpdateAppStateAction(
-                            getCommentsInformationResList: list));
-                      }
+                      await appStore.dispatch(GetCommentsByPostIdAction(
+                          postId: listOfPostsInfo[index].id!,
+                          routes: AppRoutes.selectedPostPage,
+                          context: context));
                     } else {
+                      final UserSecurityStorage getUserInformationRes =
+                          UserSecurityStorage();
+                      var comments = await getUserInformationRes
+                          .readSecureData('comments');
+                      List<GetCommentsInformationRes> list = [];
+                      var res = json.decode(comments);
+                      for (int index = 0; index < res.length; index++) {
+                        list.add(
+                            GetCommentsInformationRes.fromJson(res[index]));
+                      }
+                      appStore.dispatch(UpdateAppStateAction(
+                          getCommentsInformationResList: list));
                       Navigator.pushNamed(context, AppRoutes.selectedPostPage);
                     }
                   },

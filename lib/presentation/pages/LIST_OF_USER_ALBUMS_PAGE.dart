@@ -1,4 +1,6 @@
-import 'package:eclipse_digital_test_task/presentation/widgets/hive_widgets/boxes.dart';
+import 'dart:convert';
+
+import 'package:eclipse_digital_test_task/data/storage/flutter_security_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:eclipse_digital_test_task/data/model/model_exporter.dart';
 import 'package:eclipse_digital_test_task/data/utils/constants.dart';
@@ -42,31 +44,25 @@ List<Widget> _customAlbumColumn(BuildContext context, AppState state) {
         children: [
           InkWell(
             onTap: () async {
-              final photosBox = Boxes.getPhotosInformationRes();
-
               if (listOfAlbumInfo[index].id != state.albumIndex) {
-                var object =
-                    photosBox.get('albumnumber${state.userIndex} index');
-                if (object == null) {
-                  await appStore.dispatch(GetPhotosByAlbumIdAction(
-                      albumId: listOfAlbumInfo[index].id!,
-                      routes: AppRoutes.selectedAlbumPage,
-                      context: context));
-                  appStore.dispatch(UpdateAppStateAction(
-                      albumIndex: listOfAlbumInfo[index].id));
-                } else {
-                  List<GetPhotosInformationRes> list = [];
-                  for (int index = 0;
-                      index < photosBox.keys.toList().length;
-                      index++) {
-                    if (photosBox.containsKey(index)) {
-                      list.add(photosBox.get(index)!);
-                    }
-                  }
-                  appStore.dispatch(
-                      UpdateAppStateAction(getPhotoInformationResList: list));
-                }
+                await appStore.dispatch(GetPhotosByAlbumIdAction(
+                    albumId: listOfAlbumInfo[index].id!,
+                    routes: AppRoutes.selectedAlbumPage,
+                    context: context));
+                appStore.dispatch(UpdateAppStateAction(
+                    albumIndex: listOfAlbumInfo[index].id));
               } else {
+                final UserSecurityStorage getUserInformationRes =
+                    UserSecurityStorage();
+                var photos =
+                    await getUserInformationRes.readSecureData('photos');
+                List<GetPhotosInformationRes> list = [];
+                var res = json.decode(photos);
+                for (int index = 0; index < res.length; index++) {
+                  list.add(GetPhotosInformationRes.fromJson(res[index]));
+                }
+                appStore.dispatch(
+                    UpdateAppStateAction(getPhotoInformationResList: list));
                 Navigator.pushNamed(context, AppRoutes.selectedAlbumPage);
               }
             },

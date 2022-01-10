@@ -1,36 +1,19 @@
-import 'package:eclipse_digital_test_task/data/utils/constants.dart';
+import 'package:eclipse_digital_test_task/data/storage/flutter_security_storage.dart';
 import 'package:eclipse_digital_test_task/presentation/pages/LIST_OF_USERS_PAGE.dart';
 import 'package:eclipse_digital_test_task/presentation/pages/LIST_OF_USER_ALBUMS_PAGE.dart';
 import 'package:eclipse_digital_test_task/presentation/pages/LIST_OF_USER_POSTS_PAGE.dart';
 import 'package:eclipse_digital_test_task/presentation/pages/SELECTED_ALBUM_PAGE.dart';
 import 'package:eclipse_digital_test_task/presentation/pages/SELECTED_POST_PAGE.dart';
 import 'package:eclipse_digital_test_task/presentation/pages/SELECTED_USER_PAGE.dart';
-import 'package:eclipse_digital_test_task/presentation/widgets/hive_widgets/boxes.dart';
 import 'package:eclipse_digital_test_task/redux/action.dart';
 import 'package:eclipse_digital_test_task/redux/state.dart';
 import 'package:flutter/material.dart';
 import 'package:eclipse_digital_test_task/data/model/model_exporter.dart';
-
+import 'dart:convert';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:hive/hive.dart';
 
-Future main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
-  Hive.registerAdapter(GetPostsInformationResAdapter());
-  Hive.registerAdapter(GetAlbumsInformationResAdapter());
-  Hive.registerAdapter(GetCommentsInformationResAdapter());
-  Hive.registerAdapter(GetPhotosInformationResAdapter());
-  Hive.registerAdapter(GetUserInformationResAdapter());
-
-  await Hive.openBox<GetPostsInformationRes>('GetPostsInformationRes');
-  await Hive.openBox<GetAlbumsInformationRes>('GetAlbumsInformationRes');
-  await Hive.openBox<GetCommentsInformationRes>('GetCommentsInformationRes');
-  await Hive.openBox<GetPhotosInformationRes>('GetPhotosInformationRes');
-  await Hive.openBox<GetUserInformationRes>('GetUserInformationRes');
-
+main() {
   runApp(TestApplication());
 }
 
@@ -40,8 +23,6 @@ class TestApplication extends StatefulWidget {
 }
 
 class _TestApplicationState extends State<TestApplication> {
-  // bool checked = false;
-
   @override
   void initState() {
     _checkHiveStorage();
@@ -72,19 +53,17 @@ class _TestApplicationState extends State<TestApplication> {
     );
   }
 
-  _checkHiveStorage() async {
-    var usersBox = Boxes.getUserInformationRes();
-    var object = usersBox.get(1);
-
+  Future _checkHiveStorage() async {
+    final UserSecurityStorage getUserInformationRes = UserSecurityStorage();
+    var object = await getUserInformationRes.readSecureData('users');
+    // getUserInformationRes.deleteSecureData('users');
     if (object == null) {
       await appStore.dispatch(GetUsersAction(context: context));
     } else {
       List<GetUserInformationRes> list = [];
-      var a = usersBox.get(1);
-      for (int index = 0; index < usersBox.keys.toList().length; index++) {
-        if (usersBox.containsKey(index)) {
-          list.add(usersBox.get(index)!);
-        }
+      var res = json.decode(object);
+      for (int index = 0; index < res.length; index++) {
+        list.add(GetUserInformationRes.fromJson(res[index]));
       }
       appStore.dispatch(UpdateAppStateAction(getUserInformationResList: list));
     }

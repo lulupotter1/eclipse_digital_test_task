@@ -1,7 +1,8 @@
+import 'dart:convert';
+
 import 'package:eclipse_digital_test_task/data/model/model_exporter.dart';
-import 'package:eclipse_digital_test_task/presentation/widgets/hive_widgets/boxes.dart';
+import 'package:eclipse_digital_test_task/data/storage/flutter_security_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:eclipse_digital_test_task/data/model/get_posts_information/posts_information_model_res.dart';
 import 'package:eclipse_digital_test_task/data/utils/constants.dart';
 import 'package:eclipse_digital_test_task/presentation/widgets/custom_rows/custom_row.dart';
 import 'package:eclipse_digital_test_task/presentation/widgets/frames/rounded_container.dart';
@@ -38,33 +39,27 @@ List<Widget> _customPostColumn(BuildContext context, AppState state) {
   for (int index = 0; index < length; index++) {
     list.add(InkWell(
       onTap: () async {
-        final commentsBox = Boxes.getCommentsInformationRes();
-        var userbox = Boxes.getUserInformationRes().get(1);
         if (state.postIndex != listOfPostsInfo[index].id) {
-          var object = commentsBox.get('postnumber${state.userIndex} index');
-          if (object == null) {
-            appStore.dispatch(
-                UpdateAppStateAction(getCommentsInformationResList: []));
-            appStore.dispatch(
-                UpdateAppStateAction(postIndex: listOfPostsInfo[index].id));
+          appStore.dispatch(
+              UpdateAppStateAction(getCommentsInformationResList: []));
+          appStore.dispatch(
+              UpdateAppStateAction(postIndex: listOfPostsInfo[index].id));
 
-            await appStore.dispatch(GetCommentsByPostIdAction(
-                postId: listOfPostsInfo[index].id!,
-                routes: AppRoutes.selectedPostPage,
-                context: context));
-          } else {
-            List<GetCommentsInformationRes> list = [];
-            for (int index = 0;
-                index < commentsBox.keys.toList().length;
-                index++) {
-              if (commentsBox.containsKey(index)) {
-                list.add(commentsBox.get(index)!);
-              }
-            }
-            appStore.dispatch(
-                UpdateAppStateAction(getCommentsInformationResList: list));
-          }
+          await appStore.dispatch(GetCommentsByPostIdAction(
+              postId: listOfPostsInfo[index].id!,
+              routes: AppRoutes.selectedPostPage,
+              context: context));
         } else {
+          final UserSecurityStorage getUserInformationRes =
+              UserSecurityStorage();
+          var comments = await getUserInformationRes.readSecureData('comments');
+          List<GetCommentsInformationRes> list = [];
+          var res = json.decode(comments);
+          for (int index = 0; index < res.length; index++) {
+            list.add(GetCommentsInformationRes.fromJson(res[index]));
+          }
+          appStore.dispatch(
+              UpdateAppStateAction(getCommentsInformationResList: list));
           Navigator.pushNamed(context, AppRoutes.selectedPostPage);
         }
       },
