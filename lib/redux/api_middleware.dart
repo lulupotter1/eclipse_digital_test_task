@@ -42,17 +42,17 @@ _getUsersAction(
     if (res.data.length > 0) {
       for (int index = 0; index < res.data.length; index++) {
         object.add(GetUserInformationRes.fromJson(res.data[index]));
-        GetUserInformationRes getUserInformationRes = GetUserInformationRes();
+        GetUserInformationRes getUserInformationRes = GetUserInformationRes(
+            id: object[index].id,
+            name: object[index].name,
+            email: object[index].email,
+            username: object[index].username,
+            phone: object[index].phone,
+            website: object[index].website,
+            company: object[index].company);
 
-        getUserInformationRes.id = object[index].id;
-        getUserInformationRes.name = object[index].name;
-        getUserInformationRes.email = object[index].email;
-        getUserInformationRes.username = object[index].username;
-        getUserInformationRes.adress = object[index].adress;
-        getUserInformationRes.phone = object[index].phone;
-        getUserInformationRes.website = object[index].website;
-        getUserInformationRes.company = object[index].company;
         usersBox.put(index, getUserInformationRes);
+
         getUserInformationRes.save();
       }
 
