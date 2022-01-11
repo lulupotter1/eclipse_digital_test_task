@@ -65,6 +65,7 @@ List<Widget> _usersInformation(AppState state, BuildContext context) {
           for (int index = 0; index < res.length; index++) {
             list.add(GetPostsInformationRes.fromJson(res[index]));
           }
+
           for (int index = 0; index < res2.length; index++) {
             list2.add(GetAlbumsInformationRes.fromJson(res2[index]));
           }
