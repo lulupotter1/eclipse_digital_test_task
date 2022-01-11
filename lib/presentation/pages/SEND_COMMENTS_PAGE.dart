@@ -23,21 +23,18 @@ class SendCommentPage extends StatelessWidget {
           children: [
             BasicInput(
               controller: nameController,
-              hintText: 'Имя',
             ),
             const SizedBox(
               height: 15,
             ),
             BasicInput(
               controller: emailController,
-              hintText: 'email',
             ),
             const SizedBox(
               height: 15,
             ),
             BasicInput(
               controller: commentController,
-              hintText: 'Место для коммента',
             ),
             const SizedBox(
               height: 30,

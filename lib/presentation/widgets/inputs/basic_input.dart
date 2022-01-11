@@ -20,11 +20,12 @@ class BasicInput extends StatelessWidget {
         validator: validator,
         controller: controller,
         decoration: InputDecoration(
-          hintStyle: ThemeTextStyle.R18Linkblue.copyWith(
-              color: ThemeColors.gray.withOpacity(0.5)),
+          hintStyle: ThemeTextStyle.R18white,
           enabledBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(4)),
               borderSide: BorderSide(width: 1, color: ThemeColors.white)),
+          errorText: 'Полу пустое',
+          errorStyle: ThemeTextStyle.R18black.copyWith(color: ThemeColors.red),
           filled: true,
           fillColor: ThemeColors.white,
           hintText: hintText,
